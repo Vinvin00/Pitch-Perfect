@@ -3,23 +3,33 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../firbaseconfig";
 
-type MetricScore = { score: number; feedback: string };
+type MetricScore = { score: number; feedback: string; weight?: string };
 
 type EvaluationData = {
   overallScore: number;
-  eyeContact: MetricScore;
-  posture: MetricScore;
-  gestures: MetricScore;
-  energy: MetricScore;
-  presence: MetricScore;
+  categories?: {
+    eyeContact?: MetricScore;
+    posture?: MetricScore;
+    gestures?: MetricScore;
+    vocalDelivery?: MetricScore;
+    energy?: MetricScore;
+    fillerWords?: MetricScore;
+  };
+  eyeContact?: MetricScore;
+  posture?: MetricScore;
+  gestures?: MetricScore;
+  energy?: MetricScore;
+  presence?: MetricScore;
   summary: string;
   topStrength: string;
   topImprovement: string;
+  details?: string;
 };
 
 export default function Evaluation() {
   const { sessionId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [evaluation, setEvaluation] = useState<EvaluationData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -27,8 +37,6 @@ export default function Evaluation() {
   useEffect(() => {
     analyzeSession();
   }, []);
-
-  const location = useLocation();
 
   const analyzeSession = async () => {
     try {
@@ -47,6 +55,8 @@ export default function Evaluation() {
       }
 
       const frames = location.state?.frames;
+      const audioAnalysis = location.state?.audioAnalysis;
+
       if (!frames) {
         setError("No video frames found. Try recording again.");
         return;
@@ -57,8 +67,9 @@ export default function Evaluation() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           frames,
-          evaluationType: session.evaluationLabel,
+          evaluationType: session.evaluationType,
           duration: session.duration,
+          audioAnalysis,
         }),
       });
 
@@ -88,7 +99,7 @@ export default function Evaluation() {
       <div style={styles.loadingContainer}>
         <h2 style={styles.loadingTitle}>Analyzing your presentation...</h2>
         <p style={styles.loadingSub}>
-          AI is reviewing your eye contact, posture, gestures, and more
+          AI is reviewing your eye contact, posture, gestures, voice, and more
         </p>
       </div>
     );
@@ -106,15 +117,47 @@ export default function Evaluation() {
   }
 
   if (!evaluation) return null;
-  const defaultMetric = { score: 0, feedback: "No data available" };
 
-  const metrics = [
-    { label: "Eye Contact", data: evaluation.eyeContact || defaultMetric },
-    { label: "Posture", data: evaluation.posture || defaultMetric },
-    { label: "Gestures", data: evaluation.gestures || defaultMetric },
-    { label: "Energy", data: evaluation.energy || defaultMetric },
-    { label: "Presence", data: evaluation.presence || defaultMetric },
-  ];
+  const defaultMetric = {
+    score: 0,
+    feedback: "No data available",
+    weight: "0%",
+  };
+
+  const metrics = evaluation.categories
+    ? [
+        {
+          label: "Eye Contact",
+          data: evaluation.categories.eyeContact || defaultMetric,
+        },
+        {
+          label: "Posture",
+          data: evaluation.categories.posture || defaultMetric,
+        },
+        {
+          label: "Gestures",
+          data: evaluation.categories.gestures || defaultMetric,
+        },
+        {
+          label: "Vocal Delivery",
+          data: evaluation.categories.vocalDelivery || defaultMetric,
+        },
+        {
+          label: "Energy",
+          data: evaluation.categories.energy || defaultMetric,
+        },
+        {
+          label: "Filler Words",
+          data: evaluation.categories.fillerWords || defaultMetric,
+        },
+      ]
+    : [
+        { label: "Eye Contact", data: evaluation.eyeContact || defaultMetric },
+        { label: "Posture", data: evaluation.posture || defaultMetric },
+        { label: "Gestures", data: evaluation.gestures || defaultMetric },
+        { label: "Energy", data: evaluation.energy || defaultMetric },
+        { label: "Presence", data: evaluation.presence || defaultMetric },
+      ];
 
   return (
     <div style={styles.container}>
@@ -160,7 +203,12 @@ export default function Evaluation() {
         {metrics.map((m) => (
           <div key={m.label} style={styles.metricCard}>
             <div style={styles.metricTop}>
-              <span style={styles.metricLabel}>{m.label}</span>
+              <span style={styles.metricLabel}>
+                {m.label}
+                {m.data.weight && (
+                  <span style={styles.weightBadge}>{m.data.weight}</span>
+                )}
+              </span>
               <span
                 style={{
                   ...styles.metricScore,
@@ -183,6 +231,13 @@ export default function Evaluation() {
           </div>
         ))}
       </div>
+
+      {evaluation.details && (
+        <div style={styles.detailsCard}>
+          <h3 style={styles.detailsTitle}>Detailed Observations</h3>
+          <p style={styles.detailsText}>{evaluation.details}</p>
+        </div>
+      )}
 
       <div style={styles.actions}>
         <button
@@ -273,7 +328,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     display: "flex",
     flexDirection: "column",
     gap: 12,
-    marginBottom: 32,
+    marginBottom: 24,
   },
   metricCard: {
     background: "#111118",
@@ -290,6 +345,17 @@ const styles: { [key: string]: React.CSSProperties } = {
   metricLabel: {
     fontSize: 14,
     fontWeight: 600,
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+  },
+  weightBadge: {
+    fontSize: 11,
+    color: "#8884a0",
+    background: "#1a1a24",
+    padding: "2px 8px",
+    borderRadius: 4,
+    fontWeight: 500,
   },
   metricScore: {
     fontSize: 18,
@@ -311,6 +377,23 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: 13,
     color: "#8884a0",
     lineHeight: 1.5,
+  },
+  detailsCard: {
+    background: "#111118",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: 12,
+    padding: "20px 24px",
+    marginBottom: 24,
+  },
+  detailsTitle: {
+    fontSize: 15,
+    fontWeight: 600,
+    marginBottom: 12,
+  },
+  detailsText: {
+    fontSize: 13,
+    color: "#8884a0",
+    lineHeight: 1.7,
   },
   actions: {
     display: "flex",
