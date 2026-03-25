@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import OpenAI from "openai";
@@ -7,7 +8,7 @@ app.use(cors());
 app.use(express.json({ limit: "100mb" }));
 
 const openai = new OpenAI({
-  apiKey: "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",
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 const MODE_PROMPTS = {
@@ -70,16 +71,15 @@ CRITICAL RULES:
 - Average presenters should score 30-45. Only commanding executives score above 70.`
 };
 
-// =============================================
-// POST /api/analyze — evaluation endpoint
-// =============================================
 app.post("/api/analyze", async (req, res) => {
-  const { frames, evaluationType, duration, audioAnalysis } = req.body;
+  const { frames, frameUrls, evaluationType, duration, audioAnalysis } = req.body;
+
+  const allFrames = frames?.length ? frames : (frameUrls || []);
 
   console.log("--- New analysis request ---");
   console.log("Type:", evaluationType);
   console.log("Duration:", duration, "seconds");
-  console.log("Frames received:", frames?.length || 0);
+  console.log("Frames received:", allFrames.length, frameUrls?.length ? "(Firebase URLs)" : "(base64)");
   console.log("Audio data:", audioAnalysis ? "yes" : "no");
   if (audioAnalysis) {
     console.log("  Words:", audioAnalysis.wordCount, "WPM:", audioAnalysis.wpm);
@@ -89,9 +89,7 @@ app.post("/api/analyze", async (req, res) => {
   }
 
   const modePrompt = MODE_PROMPTS[evaluationType] || MODE_PROMPTS["professional-pitch"];
-
-  // ★ Reduced to 5 frames for faster response (was 8)
-  const limitedFrames = (frames || []).slice(0, 8);
+  const limitedFrames = allFrames.slice(0, 8);
 
   const audioContext = audioAnalysis ? `
 AUDIO & SPEECH DATA FROM THIS RECORDING:
@@ -211,9 +209,6 @@ Return ONLY valid JSON with no markdown formatting, no backticks, no extra text:
   }
 });
 
-// =============================================
-// POST /api/chat — chat endpoint
-// =============================================
 app.post("/api/chat", async (req, res) => {
   const { message, history, sessionContext } = req.body;
 

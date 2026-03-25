@@ -72,10 +72,24 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  const { frames, evaluationType, duration, audioAnalysis } = req.body;
+  const { frames, frameUrls, evaluationType, duration, audioAnalysis } = req.body;
 
   const modePrompt = MODE_PROMPTS[evaluationType] || MODE_PROMPTS["professional-pitch"];
-  const limitedFrames = (frames || []).slice(0, 8);
+
+  let imageContent = [];
+  if (frameUrls && frameUrls.length > 0) {
+    const limitedUrls = frameUrls.slice(0, 8);
+    imageContent = limitedUrls.map((url) => ({
+      type: "image_url",
+      image_url: { url, detail: "low" },
+    }));
+  } else if (frames && frames.length > 0) {
+    const limitedFrames = frames.slice(0, 8);
+    imageContent = limitedFrames.map((frame) => ({
+      type: "image_url",
+      image_url: { url: frame, detail: "low" },
+    }));
+  }
 
   const audioContext = audioAnalysis ? `
 AUDIO & SPEECH DATA FROM THIS RECORDING:
@@ -108,7 +122,7 @@ IF VOLUME IS BELOW 5: They are basically silent. Maximum score is 20.
 
 ${audioContext}
 
-You are analyzing ${limitedFrames.length} frames captured from a ${duration}-second recording.
+You are analyzing ${imageContent.length} frames captured from a ${duration}-second recording.
 Look at EVERY frame carefully. Check for:
 - Are they moving between frames or frozen in place?
 - Is their posture consistent or do they slouch?
@@ -147,11 +161,8 @@ Return ONLY valid JSON with no markdown formatting, no backticks, no extra text:
         {
           role: "user",
           content: [
-            { type: "text", text: `Analyze these ${limitedFrames.length} frames from my ${evaluationType} presentation (${duration}s recording):` },
-            ...limitedFrames.map((frame) => ({
-              type: "image_url",
-              image_url: { url: frame, detail: "low" },
-            })),
+            { type: "text", text: `Analyze these ${imageContent.length} frames from my ${evaluationType} presentation (${duration}s recording):` },
+            ...imageContent,
           ],
         },
       ],

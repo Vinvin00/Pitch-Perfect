@@ -1,0 +1,141 @@
+/* Stepper — light onboarding theme */
+
+.ob-stepper.outer-container {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 0%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+  width: 100%;
+}
+
+.ob-stepper .step-circle-container {
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  max-width: min(720px, 100%);
+  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.04),
+    0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  background: #fff;
+}
+
+/* ── Progress bar ── */
+
+.ob-progress-bar {
+  display: flex;
+  width: 100%;
+  gap: 12px;
+  padding: 1.75rem 2rem 1.25rem;
+}
+
+.ob-progress-segment {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  font-family: var(--font, inherit);
+}
+
+.ob-progress-segment:disabled {
+  cursor: default;
+}
+
+.ob-progress-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(0, 0, 0, 0.32);
+  transition: color 0.3s;
+}
+
+.ob-progress-segment.active .ob-progress-label,
+.ob-progress-segment.complete .ob-progress-label {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.ob-progress-track {
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.ob-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--accent-gold, #C9A227);
+  transform-origin: left;
+}
+
+/* ── Content area ── */
+
+.ob-stepper .step-content-default {
+  position: relative;
+  overflow: hidden;
+}
+
+.ob-stepper .step-default {
+  padding-left: 2rem;
+  padding-right: 2rem;
+  padding-bottom: 0.5rem;
+}
+
+/* ── Footer / navigation buttons ── */
+
+.ob-stepper .footer-container {
+  padding-left: 2rem;
+  padding-right: 2rem;
+  padding-bottom: 2rem;
+}
+
+.ob-stepper .footer-nav {
+  margin-top: 1.25rem;
+  display: flex;
+}
+
+.ob-stepper .footer-nav.spread {
+  justify-content: space-between;
+}
+
+.ob-stepper .footer-nav.end {
+  justify-content: flex-end;
+}
+
+.ob-stepper .back-button {
+  transition: all 0.2s;
+  border-radius: var(--r-pill, 9999px);
+  padding: 12px 22px;
+  color: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  font-family: var(--font, inherit);
+  font-size: 13px;
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.ob-stepper .back-button:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: rgba(0, 0, 0, 0.8);
+  border-color: rgba(0, 0, 0, 0.18);
+}
+
+.ob-stepper .back-button.inactive {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.ob-stepper .next-button.btn-primary {
+  padding: 12px 26px;
+  font-size: 13px;
+}
