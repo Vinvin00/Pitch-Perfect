@@ -42,12 +42,10 @@ export default function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Load session data
   useEffect(() => {
     loadSession();
   }, []);
 
-  // Subscribe to messages
   useEffect(() => {
     if (!sessionId) return;
 
@@ -71,7 +69,6 @@ export default function Chat() {
     return () => unsub();
   }, [sessionId]);
 
-  // Auto-scroll on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -99,7 +96,6 @@ export default function Chat() {
     setInput("");
     setSending(true);
 
-    // Save user message to Firestore
     const messagesRef = collection(db, "sessions", sessionId!, "messages");
     await addDoc(messagesRef, {
       role: "user",
@@ -108,13 +104,12 @@ export default function Chat() {
     });
 
     try {
-      // Build message history for context (last 20 messages)
       const history = messages.slice(-20).map((m) => ({
         role: m.role,
         content: m.content,
       }));
 
-      const res = await fetch("http://localhost:3001/api/chat", {
+      const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -139,14 +134,12 @@ export default function Chat() {
         throw new Error(data.error);
       }
 
-      // Save assistant message to Firestore
       await addDoc(messagesRef, {
         role: "assistant",
         content: data.reply,
         createdAt: serverTimestamp(),
       });
     } catch (err) {
-      // Save error as assistant message so user sees it
       await addDoc(messagesRef, {
         role: "assistant",
         content:
@@ -193,7 +186,6 @@ export default function Chat() {
 
   return (
     <div style={styles.container}>
-      {/* Header */}
       <div style={styles.header}>
         <button
           onClick={() => navigate(`/evaluation/${sessionId}`)}
@@ -223,7 +215,6 @@ export default function Chat() {
         </button>
       </div>
 
-      {/* Messages */}
       <div style={styles.messagesArea}>
         {messages.length === 0 && !sending && (
           <div style={styles.emptyChat}>
@@ -285,7 +276,6 @@ export default function Chat() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
       <div style={styles.inputArea}>
         <div style={styles.inputRow}>
           <textarea
@@ -336,8 +326,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: 16,
     color: "#8884a0",
   },
-
-  // Header
   header: {
     display: "flex",
     alignItems: "center",
@@ -375,8 +363,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     cursor: "pointer",
     padding: "6px 0",
   },
-
-  // Messages area
   messagesArea: {
     flex: 1,
     overflowY: "auto",
@@ -385,8 +371,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     flexDirection: "column",
     gap: 16,
   },
-
-  // Empty state
   emptyChat: {
     flex: 1,
     display: "flex",
@@ -424,8 +408,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     cursor: "pointer",
     transition: "border-color 0.2s",
   },
-
-  // Bubbles
   userBubbleRow: {
     display: "flex",
     justifyContent: "flex-end",
@@ -474,8 +456,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: "#8884a0",
     fontStyle: "italic",
   },
-
-  // Input area
   inputArea: {
     padding: "12px 20px 20px",
     borderTop: "1px solid rgba(255,255,255,0.08)",
